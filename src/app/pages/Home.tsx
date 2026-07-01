@@ -1,14 +1,52 @@
+import { useMemo, useState } from "react";
 import { products, banners } from "../data/products";
 import { ProductCard } from "../components/ProductCard";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../components/ui/carousel";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "../components/ui/carousel";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { Link } from "react-router";
 import { Badge } from "../components/ui/badge";
+import { SectionState } from "../components/SectionState";
 import { Zap, TrendingUp, Tag } from "lucide-react";
 
 export function Home() {
-  const flashSaleProducts = products.slice(0, 6);
-  const trendingProducts = products.slice(6, 12);
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
+  const flashSaleProducts = useMemo(() => products.slice(0, 6), []);
+  const trendingProducts = useMemo(() => products.slice(6, 12), []);
+  const recommendedProducts = useMemo(() => products.slice(0, 8), []);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <SectionState
+          kind="loading"
+          title="Đang tải trang chủ"
+          message="Đang lấy sản phẩm đề xuất cho bạn"
+          count={6}
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <SectionState
+          kind="error"
+          title="Không thể tải trang chủ"
+          message={error}
+          actionLabel="Thử lại"
+          onAction={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -27,7 +65,9 @@ export function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
                       <div className="text-white p-8">
-                        <h2 className="text-4xl font-bold mb-2">{banner.title}</h2>
+                        <h2 className="text-4xl font-bold mb-2">
+                          {banner.title}
+                        </h2>
                         <p className="text-xl">Khuyến mãi hấp dẫn</p>
                       </div>
                     </div>
@@ -135,11 +175,19 @@ export function Home() {
       {/* All Products */}
       <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Gợi ý hôm nay</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {recommendedProducts.length === 0 ? (
+          <SectionState
+            kind="empty"
+            title="Chưa có gợi ý"
+            message="Hãy quay lại sau để xem thêm sản phẩm mới."
+          />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {recommendedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

@@ -1,3 +1,23 @@
+export interface ProductVariantOption {
+  id: string;
+  value: string;
+  stockDelta: number;
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  options: ProductVariantOption[];
+}
+
+export interface ProductReview {
+  id: string;
+  user: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -12,6 +32,8 @@ export interface Product {
   description: string;
   images: string[];
   stock: number;
+  variants?: ProductVariant[];
+  reviews?: ProductReview[];
 }
 
 export const categories = [
@@ -37,13 +59,48 @@ export const products: Product[] = [
     discount: 50,
     category: "electronics",
     location: "Hà Nội",
-    description: "Tai nghe bluetooth true wireless với chất lượng âm thanh tuyệt vời, pin 24h, chống nước IPX5",
+    description:
+      "Tai nghe bluetooth true wireless với chất lượng âm thanh tuyệt vời, pin 24h, chống nước IPX5",
     images: [
       "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800",
       "https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=800",
       "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800",
     ],
     stock: 150,
+    variants: [
+      {
+        id: "color",
+        name: "Màu sắc",
+        options: [
+          { id: "black", value: "Đen", stockDelta: 0 },
+          { id: "white", value: "Trắng", stockDelta: 5 },
+        ],
+      },
+      {
+        id: "size",
+        name: "Bộ nhớ",
+        options: [
+          { id: "64", value: "64GB", stockDelta: 0 },
+          { id: "128", value: "128GB", stockDelta: 10 },
+        ],
+      },
+    ],
+    reviews: [
+      {
+        id: "r1",
+        user: "Minh",
+        rating: 5,
+        content: "Âm thanh rất ổn, pin dùng lâu và kết nối nhanh.",
+        createdAt: "2026-06-20",
+      },
+      {
+        id: "r2",
+        user: "Linh",
+        rating: 4,
+        content: "Thiết kế đẹp, thích hợp cho học tập và nghe nhạc.",
+        createdAt: "2026-06-18",
+      },
+    ],
   },
   {
     id: "2",
@@ -56,7 +113,8 @@ export const products: Product[] = [
     discount: 41,
     category: "fashion",
     location: "TP. Hồ Chí Minh",
-    description: "Áo thun form rộng unisex, chất cotton thoáng mát, nhiều màu sắc",
+    description:
+      "Áo thun form rộng unisex, chất cotton thoáng mát, nhiều màu sắc",
     images: [
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800",
       "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800",
@@ -74,7 +132,8 @@ export const products: Product[] = [
     discount: 50,
     category: "beauty",
     location: "Hà Nội",
-    description: "Kem dưỡng da với vitamin C tự nhiên, giúp dưỡng trắng và chống lão hóa",
+    description:
+      "Kem dưỡng da với vitamin C tự nhiên, giúp dưỡng trắng và chống lão hóa",
     images: [
       "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800",
       "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800",
@@ -127,7 +186,8 @@ export const products: Product[] = [
     discount: 50,
     category: "electronics",
     location: "Hà Nội",
-    description: "Smartwatch đa năng với tính năng đo nhịp tim, đếm bước chân, thông báo cuộc gọi",
+    description:
+      "Smartwatch đa năng với tính năng đo nhịp tim, đếm bước chân, thông báo cuộc gọi",
     images: [
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800",
       "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=800",
@@ -243,19 +303,22 @@ export const products: Product[] = [
 export const banners = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200",
+    image:
+      "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200",
     title: "Sale lớn mùa hè",
     link: "/category/electronics",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200",
+    image:
+      "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200",
     title: "Thời trang mới nhất",
     link: "/category/fashion",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=1200",
+    image:
+      "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=1200",
     title: "Giảm giá đến 50%",
     link: "/search",
   },

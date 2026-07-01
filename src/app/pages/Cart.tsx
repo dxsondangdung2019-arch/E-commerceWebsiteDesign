@@ -1,91 +1,121 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
-import { useState } from "react";
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-  stock: number;
-  selected: boolean;
-}
+import { useMemo, useState } from "react";
+import { SectionState } from "../components/SectionState";
+import type { AppDispatch, RootState } from "../../store/store";
+import {
+  removeFromCart,
+  toggleCartSelection,
+  toggleSelectAll,
+  updateCartQuantity,
+  setVoucherCode,
+} from "../../store/slices/cartSlice";
 
 export function Cart() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "Tai nghe Bluetooth True Wireless Cao Cấp",
-      price: 299000,
-      image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400",
-      quantity: 1,
-      stock: 150,
-      selected: true,
-    },
-    {
-      id: "2",
-      name: "Áo Thun Nam Nữ Form Rộng Unisex Chất Cotton",
-      price: 89000,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
-      quantity: 2,
-      stock: 500,
-      selected: true,
-    },
-    {
-      id: "6",
-      name: "Đồng Hồ Thông Minh Smartwatch Đo Nhịp Tim",
-      price: 599000,
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
-      quantity: 1,
-      stock: 120,
-      selected: false,
-    },
-  ]);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const voucherCode = useSelector((state: RootState) => state.cart.voucherCode);
+  const [voucherInput, setVoucherInput] = useState(voucherCode ?? "");
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
-  const toggleSelectItem = (id: string) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, selected: !item.selected } : item
-      )
-    );
-  };
-
-  const toggleSelectAll = () => {
-    const allSelected = cartItems.every((item) => item.selected);
-    setCartItems((items) =>
-      items.map((item) => ({ ...item, selected: !allSelected }))
-    );
-  };
-
-  const updateQuantity = (id: string, delta: number) => {
-    setCartItems((items) =>
-      items.map((item) => {
-        if (item.id === id) {
-          const newQuantity = Math.max(
-            1,
-            Math.min(item.stock, item.quantity + delta)
-          );
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      })
-    );
-  };
-
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
-  };
-
-  const selectedItems = cartItems.filter((item) => item.selected);
-  const totalPrice = selectedItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
+  const selectedItems = useMemo(
+    () => cartItems.filter((item) => item.selected),
+    [cartItems],
   );
-  const allSelected = cartItems.length > 0 && cartItems.every((item) => item.selected);
+  const subtotal = useMemo(
+    () =>
+      selectedItems.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0,
+      ),
+    [selectedItems],
+  );
+  const voucherDiscount = useMemo(() => {
+    const code = (voucherCode ?? "").toUpperCase();
+    if (code === "SAVE10" && subtotal >= 100000)
+      return Math.round(subtotal * 0.1);
+    if (code === "FREESHIP" && subtotal >= 300000)
+      return Math.min(30000, subtotal);
+    return 0;
+  }, [subtotal, voucherCode]);
+  const shippingFee = subtotal === 0 ? 0 : subtotal >= 500000 ? 0 : 30000;
+  const total = Math.max(0, subtotal - voucherDiscount + shippingFee);
+  const allSelected =
+    cartItems.length > 0 && cartItems.every((item) => item.selected);
+
+  const updateQuantity = (productId: string, delta: number) => {
+    const item = cartItems.find((entry) => entry.productId === productId);
+    if (!item) return;
+    dispatch(
+      updateCartQuantity({ productId, quantity: item.quantity + delta }),
+    );
+  };
+
+  const removeItem = (productId: string) => {
+    dispatch(removeFromCart(productId));
+  };
+
+  const applyVoucher = () => {
+    const normalized = voucherInput.trim().toUpperCase();
+    if (!normalized) {
+      dispatch(setVoucherCode(null));
+      toast.success("Đã bỏ áp dụng voucher");
+      return;
+    }
+
+    const validCodes = ["SAVE10", "FREESHIP"];
+    if (!validCodes.includes(normalized)) {
+      dispatch(setVoucherCode(null));
+      toast.error("Voucher không hợp lệ");
+      return;
+    }
+
+    dispatch(setVoucherCode(normalized));
+    toast.success(`Áp dụng voucher ${normalized} thành công`);
+  };
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một sản phẩm");
+      return;
+    }
+    navigate("/checkout");
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <SectionState
+          kind="loading"
+          title="Đang tải giỏ hàng"
+          message="Đang đồng bộ sản phẩm trong giỏ"
+          count={4}
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <SectionState
+          kind="error"
+          title="Không thể tải giỏ hàng"
+          message={error}
+          actionLabel="Thử lại"
+          onAction={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -129,7 +159,7 @@ export function Cart() {
             <div className="bg-gray-50 p-4 border-b flex items-center gap-4">
               <Checkbox
                 checked={allSelected}
-                onCheckedChange={toggleSelectAll}
+                onCheckedChange={() => dispatch(toggleSelectAll())}
               />
               <span className="font-semibold">
                 Tất cả ({cartItems.length} sản phẩm)
@@ -139,38 +169,40 @@ export function Cart() {
             {/* Items */}
             <div className="divide-y">
               {cartItems.map((item) => (
-                <div key={item.id} className="p-4 flex gap-4">
+                <div key={item.productId} className="p-4 flex gap-4">
                   <Checkbox
                     checked={item.selected}
-                    onCheckedChange={() => toggleSelectItem(item.id)}
+                    onCheckedChange={() =>
+                      dispatch(toggleCartSelection(item.productId))
+                    }
                   />
                   <div className="flex-1 flex gap-4">
                     <Link
-                      to={`/product/${item.id}`}
+                      to={`/product/${item.productId}`}
                       className="w-24 h-24 rounded-lg overflow-hidden border flex-shrink-0"
                     >
                       <ImageWithFallback
-                        src={item.image}
-                        alt={item.name}
+                        src={item.product.image}
+                        alt={item.product.name}
                         className="w-full h-full object-cover"
                       />
                     </Link>
                     <div className="flex-1">
                       <Link
-                        to={`/product/${item.id}`}
+                        to={`/product/${item.productId}`}
                         className="font-medium hover:text-orange-600 line-clamp-2"
                       >
-                        {item.name}
+                        {item.product.name}
                       </Link>
                       <div className="mt-2 text-orange-600 font-semibold">
-                        ₫{item.price.toLocaleString()}
+                        ₫{item.product.price.toLocaleString()}
                       </div>
                     </div>
                     <div className="flex flex-col items-end justify-between">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item.productId)}
                         className="text-gray-400 hover:text-red-600"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -179,15 +211,21 @@ export function Cart() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(item.id, -1)}
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity - 1)
+                          }
                         >
                           -
                         </Button>
-                        <span className="w-12 text-center">{item.quantity}</span>
+                        <span className="w-12 text-center">
+                          {item.quantity}
+                        </span>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(item.id, 1)}
+                          onClick={() =>
+                            updateQuantity(item.productId, item.quantity + 1)
+                          }
                         >
                           +
                         </Button>
@@ -207,22 +245,49 @@ export function Cart() {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-gray-600">
                 <span>Tạm tính ({selectedItems.length} sản phẩm)</span>
-                <span>₫{totalPrice.toLocaleString()}</span>
+                <span>₫{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Phí vận chuyển</span>
-                <span className="text-green-600">Miễn phí</span>
+                <span
+                  className={
+                    shippingFee === 0 ? "text-green-600" : "text-gray-900"
+                  }
+                >
+                  {shippingFee === 0
+                    ? "Miễn phí"
+                    : `₫${shippingFee.toLocaleString()}`}
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Giảm giá</span>
+                <span>-₫{voucherDiscount.toLocaleString()}</span>
               </div>
               <div className="border-t pt-3 flex justify-between text-lg font-bold">
                 <span>Tổng cộng</span>
                 <span className="text-orange-600">
-                  ₫{totalPrice.toLocaleString()}
+                  ₫{total.toLocaleString()}
                 </span>
               </div>
+            </div>
+            <div className="mb-4 space-y-2">
+              <Input
+                value={voucherInput}
+                onChange={(event) => setVoucherInput(event.target.value)}
+                placeholder="Nhập voucher"
+              />
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={applyVoucher}
+              >
+                Áp dụng
+              </Button>
             </div>
             <Button
               className="w-full bg-orange-600 hover:bg-orange-700"
               disabled={selectedItems.length === 0}
+              onClick={handleCheckout}
             >
               Mua hàng ({selectedItems.length})
             </Button>

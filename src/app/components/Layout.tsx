@@ -18,9 +18,11 @@ import {
   Gamepad2,
   UtensilsCrossed,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { categories } from "../data/products";
+import type { RootState } from "../../store/store";
 
 const iconMap: Record<string, any> = {
   Laptop,
@@ -35,7 +37,12 @@ const iconMap: Record<string, any> = {
 
 export function Layout() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [cartCount] = useState(3);
+  const auth = useSelector((state: RootState) => state.auth);
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems],
+  );
   const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -74,9 +81,14 @@ export function Layout() {
               <Link to="/" className="hover:opacity-80">
                 Tiếng Việt
               </Link>
-              <Link to="/" className="hover:opacity-80 flex items-center gap-1">
+              <Link
+                to={auth.token ? "/account" : "/auth"}
+                className="hover:opacity-80 flex items-center gap-1"
+              >
                 <User className="w-4 h-4" />
-                Đăng ký / Đăng nhập
+                {auth.token
+                  ? auth.user?.fullName || "Tài khoản"
+                  : "Đăng ký / Đăng nhập"}
               </Link>
             </div>
           </div>

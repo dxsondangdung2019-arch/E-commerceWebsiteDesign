@@ -22,8 +22,14 @@ const ordersSlice = createSlice({
     clearOrders: (state) => {
       state.lastLoadedUserOrders = [];
     },
+    addOrder: (state, action: PayloadAction<Order>) => {
+      state.lastLoadedUserOrders = [
+        action.payload,
+        ...state.lastLoadedUserOrders,
+      ];
+    },
   },
 });
 
-export const { setOrders, clearOrders } = ordersSlice.actions;
+export const { setOrders, clearOrders, addOrder } = ordersSlice.actions;
 export default ordersSlice.reducer;

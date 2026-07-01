@@ -1,4 +1,12 @@
-import type { DB, Product, Category, Brand, User, Order, Voucher } from "../mock-data/types";
+import type {
+  DB,
+  Product,
+  Category,
+  Brand,
+  User,
+  Order,
+  Voucher,
+} from "../mock-data/types";
 import { ensureSeeded } from "../mock-data/seed";
 import { getDB, saveDB } from "../mock-data/db";
 import { nowMs } from "../utils/crypto";
@@ -8,7 +16,10 @@ import type { ID, Role, OrderStatus } from "../types";
 
 // Types for API contracts
 export type AuthTokenPayload = { userId: ID; role: Role; exp: number };
-export type AuthMeResponse = { user: Omit<User, "passwordHash">; token: string };
+export type AuthMeResponse = {
+  user: Omit<User, "passwordHash">;
+  token: string;
+};
 
 export type ApiError = { code: string; message: string };
 
@@ -16,7 +27,10 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function withLatency<T>(fn: () => T, opts?: { minMs?: number; maxMs?: number }) {
+function withLatency<T>(
+  fn: () => T,
+  opts?: { minMs?: number; maxMs?: number },
+) {
   const minMs = opts?.minMs ?? 200;
   const maxMs = opts?.maxMs ?? 650;
   const ms = minMs + Math.floor(Math.random() * (maxMs - minMs + 1));
@@ -26,12 +40,19 @@ function withLatency<T>(fn: () => T, opts?: { minMs?: number; maxMs?: number }) 
 function getMeFromToken(token: string): AuthTokenPayload {
   // token format: header.payload.sig (fake)
   const parts = token.split(".");
-  if (parts.length < 2) throw { code: "AUTH_INVALID", message: "Token không hợp lệ" } satisfies ApiError;
+  if (parts.length < 2)
+    throw {
+      code: "AUTH_INVALID",
+      message: "Token không hợp lệ",
+    } satisfies ApiError;
   const payloadRaw = parts[1];
   const payloadJson = base64UrlDecode(payloadRaw);
   const payload = JSON.parse(payloadJson) as AuthTokenPayload;
   if (!payload?.exp || payload.exp < nowMs()) {
-    throw { code: "AUTH_EXPIRED", message: "Token đã hết hạn" } satisfies ApiError;
+    throw {
+      code: "AUTH_EXPIRED",
+      message: "Token đã hết hạn",
+    } satisfies ApiError;
   }
   return payload;
 }
@@ -50,7 +71,11 @@ function pickUserPublic(user: User): Omit<User, "passwordHash"> {
 
 function getProductById(db: DB, id: ID): Product {
   const p = db.products.find((x) => x.id === id);
-  if (!p) throw { code: "NOT_FOUND", message: "Sản phẩm không tồn tại" } satisfies ApiError;
+  if (!p)
+    throw {
+      code: "NOT_FOUND",
+      message: "Sản phẩm không tồn tại",
+    } satisfies ApiError;
   return p;
 }
 
@@ -61,18 +86,31 @@ function normalizeQuery(s: string) {
 export const mockApi = {
   // ----------------- Auth -----------------
   auth: {
-    register: async (input: { fullName: string; email: string; password: string }) => {
+    register: async (input: {
+      fullName: string;
+      email: string;
+      password: string;
+    }) => {
       return withLatency(() => {
         const db = getDB();
         const email = input.email.trim().toLowerCase();
         if (!email.includes("@")) {
-          throw { code: "VALIDATION", message: "Email không hợp lệ" } satisfies ApiError;
+          throw {
+            code: "VALIDATION",
+            message: "Email không hợp lệ",
+          } satisfies ApiError;
         }
         if (input.password.trim().length < 6) {
-          throw { code: "VALIDATION", message: "Mật khẩu tối thiểu 6 ký tự" } satisfies ApiError;
+          throw {
+            code: "VALIDATION",
+            message: "Mật khẩu tối thiểu 6 ký tự",
+          } satisfies ApiError;
         }
         if (db.users.some((u) => u.email.toLowerCase() === email)) {
-          throw { code: "EMAIL_EXISTS", message: "Email đã tồn tại" } satisfies ApiError;
+          throw {
+            code: "EMAIL_EXISTS",
+            message: "Email đã tồn tại",
+          } satisfies ApiError;
         }
 
         const newUser: User = {
@@ -90,7 +128,11 @@ export const mockApi = {
 
         saveDB(db);
 
-        const token = issueToken({ userId: newUser.id, role: newUser.role, exp: nowMs() + 1000 * 60 * 60 * 6 });
+        const token = issueToken({
+          userId: newUser.id,
+          role: newUser.role,
+          exp: nowMs() + 1000 * 60 * 60 * 6,
+        });
         return { user: pickUserPublic(newUser), token };
       });
     },
@@ -100,16 +142,34 @@ export const mockApi = {
         const db = getDB();
         const email = input.email.trim().toLowerCase();
         const user = db.users.find((u) => u.email.toLowerCase() === email);
-        if (!user) throw { code: "AUTH_INVALID", message: "Email hoặc mật khẩu không đúng" } satisfies ApiError;
-        if (user.locked) throw { code: "AUTH_LOCKED", message: "Tài khoản bị khóa" } satisfies ApiError;
+        if (!user)
+          throw {
+            code: "AUTH_INVALID",
+            message: "Email hoặc mật khẩu không đúng",
+          } satisfies ApiError;
+        if (user.locked)
+          throw {
+            code: "AUTH_LOCKED",
+            message: "Tài khoản bị khóa",
+          } satisfies ApiError;
 
         // mock: passwordHash is deterministic by email
         const expectedHash = `hash_${email}`;
-        if (user.passwordHash !== expectedHash && !user.passwordHash.startsWith("hash_")) {
-          throw { code: "AUTH_INVALID", message: "Email hoặc mật khẩu không đúng" } satisfies ApiError;
+        if (
+          user.passwordHash !== expectedHash &&
+          !user.passwordHash.startsWith("hash_")
+        ) {
+          throw {
+            code: "AUTH_INVALID",
+            message: "Email hoặc mật khẩu không đúng",
+          } satisfies ApiError;
         }
 
-        const token = issueToken({ userId: user.id, role: user.role, exp: nowMs() + 1000 * 60 * 60 * 6 });
+        const token = issueToken({
+          userId: user.id,
+          role: user.role,
+          exp: nowMs() + 1000 * 60 * 60 * 6,
+        });
         return { user: pickUserPublic(user), token };
       });
     },
@@ -120,8 +180,16 @@ export const mockApi = {
         const payload = getMeFromToken(token);
         const db = getDB();
         const user = db.users.find((u) => u.id === payload.userId);
-        if (!user) throw { code: "AUTH_INVALID", message: "Không tìm thấy người dùng" } satisfies ApiError;
-        if (user.locked) throw { code: "AUTH_LOCKED", message: "Tài khoản bị khóa" } satisfies ApiError;
+        if (!user)
+          throw {
+            code: "AUTH_INVALID",
+            message: "Không tìm thấy người dùng",
+          } satisfies ApiError;
+        if (user.locked)
+          throw {
+            code: "AUTH_LOCKED",
+            message: "Tài khoản bị khóa",
+          } satisfies ApiError;
         return { user: pickUserPublic(user), token };
       });
     },
@@ -150,17 +218,26 @@ export const mockApi = {
         let filtered = [...db.products];
 
         if (q) {
-          filtered = filtered.filter((p) =>
-            p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q),
+          filtered = filtered.filter(
+            (p) =>
+              p.name.toLowerCase().includes(q) ||
+              p.description.toLowerCase().includes(q),
           );
         }
-        if (params?.categoryId) filtered = filtered.filter((p) => p.categoryId === params.categoryId);
-        if (params?.brandId) filtered = filtered.filter((p) => p.brandId === params.brandId);
-        if (typeof params?.priceMin === "number") filtered = filtered.filter((p) => p.price >= params.priceMin!);
-        if (typeof params?.priceMax === "number") filtered = filtered.filter((p) => p.price <= params.priceMax!);
-        if (typeof params?.minRating === "number") filtered = filtered.filter((p) => p.rating >= params.minRating!);
-        if (params?.stockStatus === "IN_STOCK") filtered = filtered.filter((p) => p.stock > 0);
-        if (params?.stockStatus === "OUT_OF_STOCK") filtered = filtered.filter((p) => p.stock <= 0);
+        if (params?.categoryId)
+          filtered = filtered.filter((p) => p.categoryId === params.categoryId);
+        if (params?.brandId)
+          filtered = filtered.filter((p) => p.brandId === params.brandId);
+        if (typeof params?.priceMin === "number")
+          filtered = filtered.filter((p) => p.price >= params.priceMin!);
+        if (typeof params?.priceMax === "number")
+          filtered = filtered.filter((p) => p.price <= params.priceMax!);
+        if (typeof params?.minRating === "number")
+          filtered = filtered.filter((p) => p.rating >= params.minRating!);
+        if (params?.stockStatus === "IN_STOCK")
+          filtered = filtered.filter((p) => p.stock > 0);
+        if (params?.stockStatus === "OUT_OF_STOCK")
+          filtered = filtered.filter((p) => p.stock <= 0);
 
         switch (params?.sort) {
           case "new":
@@ -182,7 +259,13 @@ export const mockApi = {
         const total = filtered.length;
         const start = (page - 1) * pageSize;
         const items = filtered.slice(start, start + pageSize);
-        return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+        return {
+          items,
+          total,
+          page,
+          pageSize,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        };
       });
     },
 
@@ -223,7 +306,11 @@ export const mockApi = {
     get: async (token: string) => {
       return withLatency(() => {
         const payload = getMeFromToken(token);
-        if (payload.role !== "USER") throw { code: "FORBIDDEN", message: "Chỉ user mới có cart" } satisfies ApiError;
+        if (payload.role !== "USER")
+          throw {
+            code: "FORBIDDEN",
+            message: "Chỉ user mới có cart",
+          } satisfies ApiError;
         const db = getDB();
         const items = db.cartByUserId[payload.userId] ?? [];
         const full = items.map((ci) => {
@@ -243,7 +330,11 @@ export const mockApi = {
     setQuantity: async (token: string, productId: ID, quantity: number) => {
       return withLatency(() => {
         const payload = getMeFromToken(token);
-        if (payload.role !== "USER") throw { code: "FORBIDDEN", message: "Chỉ user mới có cart" } satisfies ApiError;
+        if (payload.role !== "USER")
+          throw {
+            code: "FORBIDDEN",
+            message: "Chỉ user mới có cart",
+          } satisfies ApiError;
         const db = getDB();
         const p = getProductById(db, productId);
         const q = Math.max(0, Math.floor(quantity));
@@ -257,7 +348,11 @@ export const mockApi = {
           if (idx >= 0) {
             list[idx] = { ...list[idx], quantity: nextQty };
           } else {
-            list.push({ id: `ci_${payload.userId}_${productId}`, productId, quantity: nextQty });
+            list.push({
+              id: `ci_${payload.userId}_${productId}`,
+              productId,
+              quantity: nextQty,
+            });
           }
         }
         db.cartByUserId[payload.userId] = list;
@@ -269,10 +364,16 @@ export const mockApi = {
     remove: async (token: string, productId: ID) => {
       return withLatency(() => {
         const payload = getMeFromToken(token);
-        if (payload.role !== "USER") throw { code: "FORBIDDEN", message: "Chỉ user mới có cart" } satisfies ApiError;
+        if (payload.role !== "USER")
+          throw {
+            code: "FORBIDDEN",
+            message: "Chỉ user mới có cart",
+          } satisfies ApiError;
         const db = getDB();
         const list = db.cartByUserId[payload.userId] ?? [];
-        db.cartByUserId[payload.userId] = list.filter((x) => x.productId !== productId);
+        db.cartByUserId[payload.userId] = list.filter(
+          (x) => x.productId !== productId,
+        );
         saveDB(db);
         return { ok: true };
       });
@@ -282,12 +383,24 @@ export const mockApi = {
       return withLatency(() => {
         // Apply is computed client-side later; store voucher selection into local cart snapshot (DB: just validate)
         const payload = getMeFromToken(token);
-        if (payload.role !== "USER") throw { code: "FORBIDDEN", message: "Chỉ user mới có cart" } satisfies ApiError;
+        if (payload.role !== "USER")
+          throw {
+            code: "FORBIDDEN",
+            message: "Chỉ user mới có cart",
+          } satisfies ApiError;
         const db = getDB();
         const code = voucherCode.trim().toUpperCase();
         const v = db.vouchers.find((x) => x.code.toUpperCase() === code);
-        if (!v || !v.active) throw { code: "VOUCHER_INVALID", message: "Voucher không hợp lệ" } satisfies ApiError;
-        if (v.expiresAt < nowMs()) throw { code: "VOUCHER_EXPIRED", message: "Voucher đã hết hạn" } satisfies ApiError;
+        if (!v || !v.active)
+          throw {
+            code: "VOUCHER_INVALID",
+            message: "Voucher không hợp lệ",
+          } satisfies ApiError;
+        if (v.expiresAt < nowMs())
+          throw {
+            code: "VOUCHER_EXPIRED",
+            message: "Voucher đã hết hạn",
+          } satisfies ApiError;
         return v;
       });
     },
@@ -298,7 +411,8 @@ export const mockApi = {
     listByUser: async (token: string, page = 1, pageSize = 10) => {
       return withLatency(() => {
         const payload = getMeFromToken(token);
-        if (payload.role !== "USER") throw { code: "FORBIDDEN", message: "Chỉ user" } satisfies ApiError;
+        if (payload.role !== "USER")
+          throw { code: "FORBIDDEN", message: "Chỉ user" } satisfies ApiError;
         const db = getDB();
         const all = db.orders
           .filter((o) => o.userId === payload.userId)
@@ -306,10 +420,58 @@ export const mockApi = {
         const total = all.length;
         const start = (page - 1) * pageSize;
         const items = all.slice(start, start + pageSize);
-        return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+        return {
+          items,
+          total,
+          page,
+          pageSize,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        };
       });
     },
 
     getByIdForUser: async (token: string, orderId: ID) => {
       return withLatency(() => {
         const payload = getMeFromToken(token);
+        if (payload.role !== "USER")
+          throw { code: "FORBIDDEN", message: "Chỉ user" } satisfies ApiError;
+        const db = getDB();
+        const order = db.orders.find(
+          (o) => o.id === orderId && o.userId === payload.userId,
+        );
+        if (!order)
+          throw {
+            code: "NOT_FOUND",
+            message: "Đơn hàng không tồn tại",
+          } satisfies ApiError;
+        return order;
+      });
+    },
+
+    create: async (token: string, order: Order) => {
+      return withLatency(() => {
+        const payload = getMeFromToken(token);
+        if (payload.role !== "USER")
+          throw { code: "FORBIDDEN", message: "Chỉ user" } satisfies ApiError;
+        const db = getDB();
+        db.orders.push(order);
+        saveDB(db);
+        return order;
+      });
+    },
+  },
+
+  admin: {
+    stats: async () => {
+      return withLatency(() => {
+        const db = getDB();
+        return {
+          revenue: db.orders.reduce((sum, order) => sum + order.total, 0),
+          orders: db.orders.length,
+          users: db.users.length,
+          products: db.products.length,
+        };
+      });
+    },
+  },
+} as const;
