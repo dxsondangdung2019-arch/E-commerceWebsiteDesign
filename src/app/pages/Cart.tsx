@@ -51,12 +51,15 @@ export function Cart() {
   const allSelected =
     cartItems.length > 0 && cartItems.every((item) => item.selected);
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (productId: string, nextQuantity: number) => {
     const item = cartItems.find((entry) => entry.productId === productId);
     if (!item) return;
-    dispatch(
-      updateCartQuantity({ productId, quantity: item.quantity + delta }),
+    const clampedQuantity = Math.max(
+      1,
+      Math.min(item.product.stock, nextQuantity),
     );
+    if (clampedQuantity === item.quantity) return;
+    dispatch(updateCartQuantity({ productId, quantity: clampedQuantity }));
   };
 
   const removeItem = (productId: string) => {
@@ -211,6 +214,7 @@ export function Cart() {
                         <Button
                           variant="outline"
                           size="sm"
+                          disabled={item.quantity <= 1}
                           onClick={() =>
                             updateQuantity(item.productId, item.quantity - 1)
                           }
@@ -223,6 +227,7 @@ export function Cart() {
                         <Button
                           variant="outline"
                           size="sm"
+                          disabled={item.quantity >= item.product.stock}
                           onClick={() =>
                             updateQuantity(item.productId, item.quantity + 1)
                           }

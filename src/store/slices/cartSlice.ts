@@ -31,54 +31,64 @@ const initialState: CartState = {
   hydrated: true,
 };
 
+const persistCart = (state: CartState) => {
+  writeJSON(KEYS.DB, {
+    items: state.items,
+    voucherCode: state.voucherCode,
+  });
+};
+
+const clampQuantity = (stock: number, quantity: number) => {
+  const safeStock = Math.max(0, Math.floor(stock));
+  if (safeStock === 0) return 0;
+  return Math.max(1, Math.min(safeStock, Math.floor(quantity)));
+};
+
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
     setCart: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload;
-      writeJSON(KEYS.DB, {
-        items: action.payload,
-        voucherCode: state.voucherCode,
-      });
+      persistCart(state);
     },
     setVoucherCode: (state, action: PayloadAction<string | null>) => {
       state.voucherCode = action.payload;
-      writeJSON(KEYS.DB, { items: state.items, voucherCode: action.payload });
+      persistCart(state);
     },
     clearCart: (state) => {
       state.items = [];
       state.voucherCode = null;
-      writeJSON(KEYS.DB, { items: [], voucherCode: null });
+      persistCart(state);
     },
     addToCart: (
       state,
       action: PayloadAction<{ product: Product; quantity?: number }>,
     ) => {
       const { product, quantity = 1 } = action.payload;
+      const nextQuantity = clampQuantity(product.stock, quantity);
+      if (nextQuantity === 0) return;
       const existing = state.items.find(
         (item) => item.productId === product.id,
       );
       if (existing) {
-        existing.quantity = Math.min(
-          product.stock,
-          existing.quantity + quantity,
+        existing.quantity = clampQuantity(
+          existing.product.stock,
+          existing.quantity + nextQuantity,
         );
+        existing.lineTotal = existing.product.price * existing.quantity;
         existing.selected = true;
       } else {
         state.items.push({
           id: `${product.id}-${Date.now()}`,
           productId: product.id,
-          quantity: Math.min(product.stock, quantity),
+          quantity: nextQuantity,
           selected: true,
           product,
-          lineTotal: product.price * Math.min(product.stock, quantity),
+          lineTotal: product.price * nextQuantity,
         });
       }
-      writeJSON(KEYS.DB, {
-        items: state.items,
-        voucherCode: state.voucherCode,
-      });
+      persistCart(state);
     },
     updateCartQuantity: (
       state,
@@ -87,21 +97,15 @@ const cartSlice = createSlice({
       const { productId, quantity } = action.payload;
       const item = state.items.find((entry) => entry.productId === productId);
       if (!item) return;
-      item.quantity = Math.max(1, Math.min(item.product.stock, quantity));
+      item.quantity = clampQuantity(item.product.stock, quantity);
       item.lineTotal = item.product.price * item.quantity;
-      writeJSON(KEYS.DB, {
-        items: state.items,
-        voucherCode: state.voucherCode,
-      });
+      persistCart(state);
     },
     removeFromCart: (state, action: PayloadAction<ID>) => {
       state.items = state.items.filter(
         (item) => item.productId !== action.payload,
       );
-      writeJSON(KEYS.DB, {
-        items: state.items,
-        voucherCode: state.voucherCode,
-      });
+      persistCart(state);
     },
     toggleCartSelection: (state, action: PayloadAction<ID>) => {
       const item = state.items.find(
@@ -109,6 +113,7 @@ const cartSlice = createSlice({
       );
       if (item) {
         item.selected = !item.selected;
+        persistCart(state);
       }
     },
     toggleSelectAll: (state) => {
@@ -117,6 +122,7 @@ const cartSlice = createSlice({
         ...item,
         selected: shouldSelectAll,
       }));
+      persistCart(state);
     },
   },
 });

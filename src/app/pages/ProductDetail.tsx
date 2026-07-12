@@ -71,13 +71,20 @@ export function ProductDetail() {
       const option = variant.options.find((item) => item.id === selected);
       if (option) stock += option.stockDelta;
     });
-    return Math.max(1, stock);
+    return Math.max(0, stock);
   }, [product, selectedVariant]);
   const averageRating = useMemo(() => {
     const reviews = product.reviews ?? [];
     if (!reviews.length) return product.rating;
     return reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length;
   }, [product]);
+  const cartProduct = useMemo(
+    () => ({
+      ...product,
+      stock: availableStock,
+    }),
+    [product, availableStock],
+  );
   const viewedProducts = products.filter(
     (item) => recentlyViewed.includes(item.id) && item.id !== product.id,
   );
@@ -90,7 +97,7 @@ export function ProductDetail() {
       toast.error("Vui lòng chọn đầy đủ biến thể trước khi thêm vào giỏ");
       return;
     }
-    dispatch(addToCart({ product, quantity }));
+    dispatch(addToCart({ product: cartProduct, quantity }));
     toast.success("Đã thêm sản phẩm vào giỏ hàng");
   };
 
@@ -102,7 +109,7 @@ export function ProductDetail() {
       toast.error("Vui lòng chọn đầy đủ biến thể trước khi mua");
       return;
     }
-    dispatch(addToCart({ product, quantity }));
+    dispatch(addToCart({ product: cartProduct, quantity }));
     navigate("/checkout");
   };
 
@@ -215,13 +222,14 @@ export function ProductDetail() {
                         <button
                           key={option.id}
                           type="button"
+                          disabled={availableStock <= 0}
                           onClick={() =>
                             setSelectedVariant((prev) => ({
                               ...prev,
                               [variant.id]: option.id,
                             }))
                           }
-                          className={`rounded-full border px-3 py-2 text-sm ${isSelected ? "border-orange-600 bg-orange-50 text-orange-700" : "border-gray-300"}`}
+                          className={`rounded-full border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 ${isSelected ? "border-orange-600 bg-orange-50 text-orange-700" : "border-gray-300"}`}
                         >
                           {option.value}
                         </button>
@@ -237,6 +245,7 @@ export function ProductDetail() {
                   <Button
                     variant="outline"
                     size="sm"
+                    disabled={quantity <= 1}
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   >
                     -
@@ -245,6 +254,7 @@ export function ProductDetail() {
                   <Button
                     variant="outline"
                     size="sm"
+                    disabled={availableStock <= 0 || quantity >= availableStock}
                     onClick={() =>
                       setQuantity(Math.min(availableStock, quantity + 1))
                     }
@@ -252,7 +262,9 @@ export function ProductDetail() {
                     +
                   </Button>
                   <span className="text-sm text-gray-600 ml-4">
-                    {availableStock} sản phẩm có sẵn
+                    {availableStock > 0
+                      ? `${availableStock} sản phẩm có sẵn`
+                      : "Hết hàng"}
                   </span>
                 </div>
               </div>
@@ -261,6 +273,7 @@ export function ProductDetail() {
                 <Button
                   variant="outline"
                   className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50"
+                  disabled={availableStock <= 0}
                   onClick={handleAddToCart}
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
@@ -268,6 +281,7 @@ export function ProductDetail() {
                 </Button>
                 <Button
                   className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  disabled={availableStock <= 0}
                   onClick={handleBuyNow}
                 >
                   Mua ngay
