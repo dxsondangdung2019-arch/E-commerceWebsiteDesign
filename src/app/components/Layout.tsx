@@ -8,7 +8,8 @@ import {
   User,
   Menu,
   Bell,
-  MapPin,
+  Store,
+  BadgePlus,
   Laptop,
   Shirt,
   Sparkles,
@@ -59,27 +60,28 @@ export function Layout() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-10 text-sm">
             <div className="flex items-center gap-4">
-              <Link to="/" className="hover:opacity-80">
+              <Link
+                to="/seller/channel"
+                className="hover:opacity-80 flex items-center gap-1"
+              >
+                <Store className="w-4 h-4" />
                 Kênh Người Bán
               </Link>
-              <Link to="/" className="hover:opacity-80">
+              <Link
+                to="/seller/register"
+                className="hover:opacity-80 flex items-center gap-1"
+              >
+                <BadgePlus className="w-4 h-4" />
                 Trở thành Người Bán
-              </Link>
-              <Link to="/" className="hover:opacity-80 flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                Tải ứng dụng
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <Link to="/" className="hover:opacity-80 flex items-center gap-1">
+              <Link
+                to="/notifications"
+                className="hover:opacity-80 flex items-center gap-1"
+              >
                 <Bell className="w-4 h-4" />
                 Thông báo
-              </Link>
-              <Link to="/" className="hover:opacity-80">
-                Hỗ trợ
-              </Link>
-              <Link to="/" className="hover:opacity-80">
-                Tiếng Việt
               </Link>
               <Link
                 to={auth.token ? "/account" : "/auth"}

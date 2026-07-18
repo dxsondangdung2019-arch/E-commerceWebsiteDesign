@@ -33,6 +33,21 @@ const AuthPage = lazy(() =>
 const AccountPage = lazy(() =>
   import("../app/pages/Account").then((m) => ({ default: m.AccountPage })),
 );
+const SellerChannelPage = lazy(() =>
+  import("../app/pages/SellerChannel").then((m) => ({
+    default: m.SellerChannelPage,
+  })),
+);
+const BecomeSellerPage = lazy(() =>
+  import("../app/pages/BecomeSeller").then((m) => ({
+    default: m.BecomeSellerPage,
+  })),
+);
+const NotificationsPage = lazy(() =>
+  import("../app/pages/Notifications").then((m) => ({
+    default: m.NotificationsPage,
+  })),
+);
 const AdminPage = lazy(() =>
   import("../app/pages/Admin").then((m) => ({ default: m.AdminPage })),
 );
@@ -60,6 +75,9 @@ export const router = createBrowserRouter([
       { path: "checkout", element: <Checkout /> },
       { path: "checkout/success", element: <CheckoutSuccess /> },
       { path: "auth", element: <AuthPage /> },
+      { path: "seller/channel", element: <SellerChannelPage /> },
+      { path: "seller/register", element: <BecomeSellerPage /> },
+      { path: "notifications", element: <NotificationsPage /> },
       {
         path: "account",
         element: (

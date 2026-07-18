@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { ShoppingBag, ShieldCheck, Truck, BadgePercent } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -154,37 +155,61 @@ export function AuthPage() {
     }
   };
 
+  const tabButtonClass = (value: typeof mode) =>
+    `flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+      mode === value
+        ? "bg-orange-600 text-white shadow-sm"
+        : "text-gray-500 hover:text-gray-900"
+    }`;
+
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-12">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-[1fr_0.9fr]">
-        <div className="hidden bg-gradient-to-br from-orange-500 to-red-500 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_24px_80px_rgba(249,115,22,0.18)] dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-[1fr_0.95fr]">
+        <div className="hidden bg-gradient-to-br from-orange-500 via-red-500 to-orange-600 p-10 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold">
-              Chào mừng bạn đến ShopViet
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-medium">
+              <ShoppingBag className="h-4 w-4" />
+              ShopViet
+            </div>
+            <h1 className="max-w-md text-4xl font-bold leading-tight">
+              Mua sắm nhanh, đăng nhập gọn, giao diện quen như Shopee.
             </h1>
-            <p className="mt-3 text-sm text-orange-100">
-              Đăng nhập hoặc tạo tài khoản để theo dõi đơn hàng, wishlist và ưu
-              đãi độc quyền.
+            <p className="mt-4 max-w-lg text-sm leading-6 text-orange-100">
+              Tạo tài khoản để theo dõi đơn hàng, wishlist và ưu đãi. Trải
+              nghiệm này giữ luồng đăng nhập đơn giản, dễ nhận diện và tập trung
+              vào chuyển đổi.
             </p>
           </div>
-          <div className="text-sm text-orange-100">
-            Mọi trải nghiệm đều dùng dữ liệu mock để demo đầy đủ.
+          <div className="space-y-4 text-sm text-orange-50">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5" />
+              Bảo mật thông tin và đăng nhập an toàn
+            </div>
+            <div className="flex items-center gap-3">
+              <BadgePercent className="h-5 w-5" />
+              Ưu đãi, mã giảm giá và flash sale nổi bật
+            </div>
+            <div className="flex items-center gap-3">
+              <Truck className="h-5 w-5" />
+              Theo dõi đơn hàng và trạng thái giao hàng
+            </div>
           </div>
         </div>
-        <div className="p-8 sm:p-10">
-          <div className="mb-6 flex items-center justify-between">
+
+        <div className="p-6 sm:p-8 lg:p-10">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {mode === "login"
                   ? "Đăng nhập"
                   : mode === "register"
                     ? "Đăng ký"
                     : "Quên mật khẩu"}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {mode === "forgot"
-                  ? "Nhập email để nhận hướng dẫn"
-                  : "Điền thông tin để tiếp tục"}
+                  ? "Nhập email để nhận hướng dẫn khôi phục"
+                  : "Chọn tab và hoàn tất chỉ trong vài bước"}
               </p>
             </div>
             {auth.token ? (
@@ -193,6 +218,31 @@ export function AuthPage() {
               </Button>
             ) : null}
           </div>
+
+          <div className="mb-6 flex rounded-full bg-gray-100 p-1 dark:bg-gray-800">
+            <button
+              type="button"
+              className={tabButtonClass("login")}
+              onClick={() => setMode("login")}
+            >
+              Đăng nhập
+            </button>
+            <button
+              type="button"
+              className={tabButtonClass("register")}
+              onClick={() => setMode("register")}
+            >
+              Đăng ký
+            </button>
+            <button
+              type="button"
+              className={tabButtonClass("forgot")}
+              onClick={() => setMode("forgot")}
+            >
+              Quên mật khẩu
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" ? (
               <div className="space-y-2">
@@ -206,6 +256,7 @@ export function AuthPage() {
                       fullName: event.target.value,
                     }))
                   }
+                  placeholder="Nguyễn Văn A"
                 />
               </div>
             ) : null}
@@ -218,6 +269,7 @@ export function AuthPage() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, email: event.target.value }))
                 }
+                placeholder="name@example.com"
               />
             </div>
             {mode !== "forgot" ? (
@@ -233,6 +285,7 @@ export function AuthPage() {
                       password: event.target.value,
                     }))
                   }
+                  placeholder="••••••••"
                 />
               </div>
             ) : null}
@@ -249,12 +302,13 @@ export function AuthPage() {
                       confirmPassword: event.target.value,
                     }))
                   }
+                  placeholder="••••••••"
                 />
               </div>
             ) : null}
             {mode === "login" ? (
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                   <Checkbox
                     checked={remember}
                     onCheckedChange={() => setRemember((prev) => !prev)}
@@ -263,7 +317,7 @@ export function AuthPage() {
                 </label>
                 <button
                   type="button"
-                  className="text-orange-600"
+                  className="font-medium text-orange-600"
                   onClick={() => setMode("forgot")}
                 >
                   Quên mật khẩu?
@@ -284,13 +338,14 @@ export function AuthPage() {
                     : "Gửi hướng dẫn"}
             </Button>
           </form>
-          <div className="mt-6 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+
+          <div className="mt-6 flex items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
             {mode === "login" ? (
               <span>
                 Chưa có tài khoản?{" "}
                 <button
                   type="button"
-                  className="text-orange-600"
+                  className="font-medium text-orange-600"
                   onClick={() => setMode("register")}
                 >
                   Đăng ký ngay
@@ -299,13 +354,13 @@ export function AuthPage() {
             ) : (
               <button
                 type="button"
-                className="text-orange-600"
+                className="font-medium text-orange-600"
                 onClick={() => setMode("login")}
               >
                 Quay lại đăng nhập
               </button>
             )}
-            <Link to="/" className="text-orange-600">
+            <Link to="/" className="font-medium text-orange-600">
               Về trang chủ
             </Link>
           </div>
