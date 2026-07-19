@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { CheckCircle2, Store } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/ui/button";
@@ -13,6 +14,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 
 export function BecomeSellerPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     shopName: "",
     fullName: "",
@@ -24,6 +26,7 @@ export function BecomeSellerPage() {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     toast.success("Đã ghi nhận yêu cầu trở thành Người Bán");
+
     setForm({
       shopName: "",
       fullName: "",
@@ -31,6 +34,8 @@ export function BecomeSellerPage() {
       phone: "",
       note: "",
     });
+
+    navigate("/seller/channel");
   };
 
   return (

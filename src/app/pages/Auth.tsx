@@ -234,13 +234,6 @@ export function AuthPage() {
             >
               Đăng ký
             </button>
-            <button
-              type="button"
-              className={tabButtonClass("forgot")}
-              onClick={() => setMode("forgot")}
-            >
-              Quên mật khẩu
-            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
